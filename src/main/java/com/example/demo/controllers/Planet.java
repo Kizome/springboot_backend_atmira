@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,46 +20,54 @@ public class Planet {
 	public String start_date = "2020-09-09";
 	public String end_date = "2020-09-16";
 	public String api_key = "zdUP8ElJv1cehFM0rsZVSQN7uBVxlDnu4diHlLSb";
-	public NearEarthObject[] asteroidesMasGrandes = new NearEarthObject[3];
-	public boolean contieneNull = false;
+	public Astrologia astrologia = new Astrologia();
+	public PlanetaPerdido perdido = new PlanetaPerdido();
 
 	private RestTemplate restTemplate = new RestTemplate();
 
+	/**
+	 * Metodo principal que será el encargado del llamado de metodos para el tratamiento de datos extraidos de la
+	 * api de la nasa.
+	 * @param planet Planeta que se quiere consultar (solo conuslta la tierra al ser una api NEO (Near Earth Objects))
+	 * @return Devuelve un objeto que será transformado en un JSON para su visualización
+	 * @throws JsonMappingException
+	 * @throws JsonProcessingException
+	 */
 	@RequestMapping("/asteroids")
 	Object name(@RequestParam String planet) throws JsonMappingException, JsonProcessingException {
+		if (planet.equals("earth")) {
+			calculaFechas();
 
-		calculaFechas();
+			Asteroid forNow = restTemplate.getForObject(
+					url + "start_date=" + start_date + "&end_date=" + end_date + "&api_key=" + api_key, Asteroid.class);
 
-		Asteroid forNow = restTemplate.getForObject(
-				url + "start_date=" + start_date + "&end_date=" + end_date + "&api_key=" + api_key, Asteroid.class);
+			// Recorre cada dia encontrado
+			forNow.getNearEarthObjects().forEach((dia, neos) -> {
 
-		// Recorre cada dia encontrado
-		forNow.getNearEarthObjects().forEach((dia, neos) -> {
-			System.out.println("dia " + dia);
+				ArrayList<NearEarthObject> ListadoNeos = new ArrayList<>(neos);
 
-			ArrayList<NearEarthObject> ListadoNeos = new ArrayList<>(neos);
+				astrologia.compruebaAsteroides(ListadoNeos);
 
-			compruebaAsteroides(ListadoNeos);
+				astrologia.ordenaAsteroides();
 
-			ordenaAsteroides();
+				// Recorre los asteroides de cada dia
+				for (int i = 0; i < ListadoNeos.size(); i++) {
+					astrologia.asteroideMasGrande(ListadoNeos.get(i));
+				}
 
-			// Recorre los asteroides de cada dia
-			for (int i = 0; i < ListadoNeos.size(); i++) {
+			});
 
-				asteroideMasGrande(ListadoNeos.get(i));
-				/*
-				 * System.out.println(ListadoNeos.get(i).getID());
-				 * System.out.println(ListadoNeos.get(i).getIsPotentiallyHazardousAsteroid());
-				 */
-			}
-
-		});
-
-		return forNow;
+			return astrologia.cinturonDeAsteroides();
+		} else {
+			perdido.setMensaje("Lo siento, el planeta " + planet + " no está contemplado en esta versión.");
+			return perdido;
+		}
 	}
-
+	
+	
+	
 	/**
-	 * 
+	 * Metodo encargado de extraer la fecha del sistema y sumar 7 dias para su posterior consulta en la API de la NASA
 	 */
 	private void calculaFechas() {
 
@@ -75,88 +82,4 @@ public class Planet {
 		end_date = formateador.format(sietedias);
 	}
 
-	private void compruebaAsteroides(ArrayList<NearEarthObject> asteroides) {
-
-		int contadorNull = 0;
-
-		for (int i = 0; i < asteroidesMasGrandes.length; i++) {
-			if (asteroidesMasGrandes[i] != null) {
-				contieneNull = false;
-			} else {
-				contadorNull++;
-			}
-		}
-
-		if (contadorNull == 3) {
-			for (int i = 0; i < asteroidesMasGrandes.length; i++) {
-				asteroidesMasGrandes[i] = asteroides.get(i);
-			}
-		}
-	}
-
-	private void ordenaAsteroides() {
-		double mediaUno;
-		double mediaDos;
-		double mediaTres;
-		NearEarthObject salva = new NearEarthObject();
-		NearEarthObject salvaDos = new NearEarthObject();
-		mediaUno = (asteroidesMasGrandes[0].getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ asteroidesMasGrandes[0].getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-		mediaDos = (asteroidesMasGrandes[1].getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ asteroidesMasGrandes[1].getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-		mediaTres = (asteroidesMasGrandes[2].getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ asteroidesMasGrandes[2].getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-
-		if (mediaUno > mediaTres && mediaTres > mediaDos) {
-			salva = asteroidesMasGrandes[1];
-			asteroidesMasGrandes[1] = asteroidesMasGrandes[2];
-			asteroidesMasGrandes[2] = salva;
-		} else if (mediaDos > mediaUno && mediaUno > mediaTres) {
-			salva = asteroidesMasGrandes[0];
-			asteroidesMasGrandes[0] = asteroidesMasGrandes[1];
-			asteroidesMasGrandes[1] = salva;
-		} else if (mediaDos > mediaTres && mediaTres > mediaUno) {
-			salva = asteroidesMasGrandes[0];
-			asteroidesMasGrandes[0] = asteroidesMasGrandes[1];
-			asteroidesMasGrandes[1] = asteroidesMasGrandes[2];
-			asteroidesMasGrandes[2] = salva;
-		} else if (mediaTres > mediaUno && mediaUno > mediaDos) {
-			salva = asteroidesMasGrandes[0];
-			salvaDos = asteroidesMasGrandes[1];
-			asteroidesMasGrandes[0] = asteroidesMasGrandes[2];
-			asteroidesMasGrandes[1] = salva;
-			asteroidesMasGrandes[2] = salvaDos;
-		} else if (mediaTres > mediaDos && mediaDos > mediaUno) {
-			salva = asteroidesMasGrandes[0];
-			salvaDos = asteroidesMasGrandes[1];
-			asteroidesMasGrandes[0] = asteroidesMasGrandes[2];
-			asteroidesMasGrandes[1] = salvaDos;
-			asteroidesMasGrandes[2] = salva;
-		}
-
-	}
-
-	private void asteroideMasGrande(NearEarthObject ast) {
-		double mediaUno;
-		double mediaDos;
-		double mediaTres;
-		double mediaCuatro;
-		mediaUno = (asteroidesMasGrandes[0].getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ asteroidesMasGrandes[0].getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-		mediaDos = (asteroidesMasGrandes[1].getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ asteroidesMasGrandes[1].getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-		mediaTres = (asteroidesMasGrandes[2].getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ asteroidesMasGrandes[2].getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-		mediaCuatro = (ast.getEstimatedDiameter().getKilometers().getEstimatedDiameterMin()
-				+ ast.getEstimatedDiameter().getKilometers().getEstimatedDiameterMax()) / 2;
-
-		if (mediaCuatro > mediaUno) {
-			asteroidesMasGrandes[0] = ast;
-		} else if (mediaCuatro > mediaDos) {
-			asteroidesMasGrandes[1] = ast;
-		} else if (mediaCuatro > mediaTres) {
-			asteroidesMasGrandes[2] = ast;
-		}
-
-	}
 }

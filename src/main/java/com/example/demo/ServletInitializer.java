@@ -3,6 +3,10 @@ package com.example.demo;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
+/**
+ * @author omarj
+ *
+ */
 public class ServletInitializer extends SpringBootServletInitializer {
 
 	@Override

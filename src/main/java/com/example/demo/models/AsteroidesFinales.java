@@ -1,20 +1,20 @@
 package com.example.demo.models;
 
-import java.util.Date;
+import java.time.LocalDate;
 
-public class DangerousAsteroids {
+public class AsteroidesFinales {
 
 	public String nombre;
 	public double diametro;
 	public String velocidad;
-	public Date fecha;
+	public LocalDate fecha;
 	public String planeta;
 
-	public DangerousAsteroids() {
+	public AsteroidesFinales() {
 		
 	}
 
-	public DangerousAsteroids(String nombre, float diametro, String velocidad, Date fecha, String planeta) {
+	public AsteroidesFinales(String nombre, double diametro, String velocidad, LocalDate fecha, String planeta) {
 		super();
 		this.nombre = nombre;
 		this.diametro = diametro;
@@ -47,11 +47,11 @@ public class DangerousAsteroids {
 		this.velocidad = velocidad;
 	}
 
-	public Date getFecha() {
+	public LocalDate getFecha() {
 		return fecha;
 	}
 
-	public void setFecha(Date fecha) {
+	public void setFecha(LocalDate fecha) {
 		this.fecha = fecha;
 	}
 
